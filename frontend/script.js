@@ -161,36 +161,38 @@ async function saveEntry() {
 }
 
 async function loadEntries() {
-  console.log("Lade Einträge...");
-  const response = await fetch('/api/entries');
-  if (response.ok) {
-    const entries = await response.json();
-    console.log("Einträge empfangen:", entries.length);
-    window.allEntries = entries; // Für PDF-Export speichern
-    const container = document.getElementById('entries-list');
-    container.innerHTML = '';
+  const container = document.getElementById('entries-list');
+  container.innerHTML = '<p style="text-align:center;">Lade Übergaben...</p>';
+  document.getElementById('entries-section').style.display = 'block';
 
-    if (entries.length === 0) {
-      container.innerHTML = '<p style="text-align:center; color:#888;">Noch keine Übergaben vorhanden.</p>';
-    }
+  try {
+    const response = await fetch('/api/entries?t=' + Date.now());
+    if (response.ok) {
+      const entries = await response.json();
+      console.log("Einträge empfangen:", entries);
+      window.allEntries = entries;
+      container.innerHTML = '';
 
-    entries.forEach(entry => {
-      console.log("Eintrag aus DB:", entry);
+      if (!entries || entries.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#888;">Noch keine Übergaben in der Cloud gefunden.</p>';
+        return;
+      }
 
-      // Mapping: Wir suchen in beiden Schreibweisen (Supabase & Alt)
-      const d = {
-        date: entry.date || entry.issuer_date || '-',
-        workTime: entry.work_time || entry.workTime || '',
-        machine: entry.machine || 'Prod.-bereich',
-        completedTasks: entry.completed_tasks || entry.completedTasks || '',
-        incidents: entry.incidents || '',
-        incidentFrom: entry.incident_from || entry.incidentFrom || '',
-        incidentTo: entry.incident_to || entry.incidentTo || '',
-        pendingWorks: entry.pending_works || entry.pendingWorks || '',
-        issuer: entry.issuer || 'Unbekannt',
-        issuerTime: entry.issuer_time || entry.issuerTime || '--:--',
-        photos: entry.photos
-      };
+      entries.forEach(entry => {
+        // Mapping: Wir suchen in beiden Schreibweisen
+        const d = {
+          date: entry.date || entry.issuer_date || '-',
+          workTime: entry.work_time || entry.workTime || '',
+          machine: entry.machine || 'Prod.-bereich',
+          completedTasks: entry.completed_tasks || entry.completedTasks || '',
+          incidents: entry.incidents || '',
+          incidentFrom: entry.incident_from || entry.incidentFrom || '',
+          incidentTo: entry.incident_to || entry.incidentTo || '',
+          pendingWorks: entry.pending_works || entry.pendingWorks || '',
+          issuer: entry.issuer || 'Unbekannt',
+          issuerTime: entry.issuer_time || entry.issuerTime || '--:--',
+          photos: entry.photos
+        };
 
       let photos = [];
       try { photos = JSON.parse(d.photos || '[]'); } catch(e) {}
@@ -225,8 +227,12 @@ async function loadEntries() {
       container.appendChild(div);
     });
 
-    window.allEntries = entries; // Für die Bildanzeige und PDF
-    document.getElementById('entries-section').style.display = 'block';
+    } else {
+      container.innerHTML = '<p style="text-align:center; color:red;">Fehler beim Laden (Server-Antwort nicht ok).</p>';
+    }
+  } catch (err) {
+    console.error("loadEntries Fehler:", err);
+    container.innerHTML = '<p style="text-align:center; color:red;">Netzwerkfehler beim Laden.</p>';
   }
 }
 
