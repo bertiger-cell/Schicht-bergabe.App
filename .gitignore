@@ -141,3 +141,17 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+
+# Database
+database.db
+/tmp/database.db
+
+# Scripts
+new.sh
+new2.sh
+new3.sh
