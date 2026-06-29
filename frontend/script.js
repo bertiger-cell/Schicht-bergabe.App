@@ -175,11 +175,12 @@ async function loadEntries() {
     }
 
     entries.forEach(entry => {
-      console.log("Verarbeite Eintrag:", entry);
-      // Extra sicheres Mapping für alle Feld-Varianten
+      console.log("Eintrag aus DB:", entry);
+
+      // Mapping: Wir suchen in beiden Schreibweisen (Supabase & Alt)
       const d = {
         date: entry.date || entry.issuer_date || '-',
-        workTime: entry.work_time || entry.workTime || 'Nicht angegeben',
+        workTime: entry.work_time || entry.workTime || '',
         machine: entry.machine || 'Prod.-bereich',
         completedTasks: entry.completed_tasks || entry.completedTasks || '',
         incidents: entry.incidents || '',
@@ -208,16 +209,16 @@ async function loadEntries() {
       const div = document.createElement('div');
       div.className = 'entry-item';
       div.innerHTML = `
-        <div class="entry-header">Datum: ${d.date} | Arbeitszeit: ${d.workTime || 'Nicht angegeben'}</div>
+        <div class="entry-header">Datum: ${d.date} | Schicht: ${d.workTime || '---'}</div>
         <div class="entry-body">
-            <p><strong>Prod.-bereich:</strong> ${d.machine || 'Prod.-bereich'}</p>
+            <p><strong>Bereich:</strong> ${d.machine}</p>
             <p><strong>Erledigte Aufgaben:</strong><br>${renderText(d.completedTasks)}</p>
             ${d.incidents || d.incidentFrom || d.incidentTo ? `
               <p><strong>Wartung / Störung (${d.incidentFrom || ''} - ${d.incidentTo || ''}):</strong><br>${renderText(d.incidents)}</p>
             ` : ''}
             <p><strong>Zu erledigende Aufgaben:</strong><br>${renderText(d.pendingWorks)}</p>
-            <p style="font-size: 0.85rem; color: #666; margin-top: 10px; border-top: 1px solid #eee; pt: 5px;">
-                Ausgestellt von ${d.issuer || 'Unbekannt'} um ${d.issuerTime || '--:--'} Uhr
+            <p style="font-size: 0.85rem; color: #666; margin-top: 10px; border-top: 1px solid #eee; padding-top: 5px;">
+                Ausgestellt von <strong>${d.issuer}</strong> um ${d.issuerTime} Uhr
             </p>
         </div>
       `;
