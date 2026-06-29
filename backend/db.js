@@ -29,7 +29,15 @@ db.serialize(() => {
     photos TEXT,
     userId TEXT,
     createdAt TEXT DEFAULT CURRENT_TIMESTAMP
-  )`);
+  )`, () => {
+    // Sicherstellen, dass neue Spalten existieren (für bestehende Datenbanken)
+    const columns = ['workTime', 'incidentFrom', 'incidentTo', 'photos'];
+    columns.forEach(col => {
+      db.run(`ALTER TABLE entries ADD COLUMN ${col} TEXT`, (err) => {
+        // Fehler ignorieren, wenn Spalte schon existiert
+      });
+    });
+  });
 });
 
 module.exports = {
