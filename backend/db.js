@@ -6,10 +6,11 @@ let isPostgres = false;
 if (process.env.DATABASE_URL) {
   pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 5000 // 5 Sekunden Timeout
   });
   isPostgres = true;
-  console.log("Nutze Supabase (PostgreSQL) Datenbank");
+  console.log("DATABASE_URL erkannt. Versuche Supabase Verbindung...");
 } else {
   const sqlite3 = require('sqlite3').verbose();
   const path = require('path');
@@ -61,7 +62,11 @@ const initDb = async () => {
 
   try {
     if (isPostgres) {
-      // RESET BEFEHL AKTIVIERT
+      console.log("Prüfe Datenbank-Verbindung...");
+      await pool.query("SELECT NOW()");
+      console.log("Verbindung erfolgreich!");
+
+      // RESET BEFEHL AKTIVIERT (Nur einmalig!)
       console.log("Führe Datenbank-Reset aus...");
       await pool.query("DROP TABLE IF EXISTS users CASCADE");
       await pool.query(usersTable);

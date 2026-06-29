@@ -30,16 +30,20 @@ app.post('/api/login', async (req, res) => {
 });
 
 app.post('/api/register', async (req, res) => {
-  const { user, password } = req.body;
-  const count = await db.getUserCount();
-  if (count >= 5) {
-    return res.status(400).send('Max. 5 Benutzer erlaubt');
-  }
-  const success = await db.createUser(user, password);
-  if (success) {
-    res.json({ success: true });
-  } else {
-    res.status(400).send('Benutzer existiert bereits');
+  try {
+    const { user, password } = req.body;
+    const count = await db.getUserCount();
+    if (count >= 10) { // Erhöht auf 10
+      return res.status(400).send('Max. 10 Benutzer erlaubt');
+    }
+    const success = await db.createUser(user, password);
+    if (success) {
+      res.json({ success: true });
+    } else {
+      res.status(400).send('Benutzer existiert bereits oder Datenbankfehler');
+    }
+  } catch (err) {
+    res.status(500).send('Serverfehler: ' + err.message);
   }
 });
 
