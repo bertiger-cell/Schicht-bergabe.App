@@ -61,19 +61,18 @@ const initDb = async () => {
 
   try {
     if (isPostgres) {
-      // Einmaliges Löschen der Benutzer-Tabelle zum Zurücksetzen
-      // await pool.query("DROP TABLE IF EXISTS users CASCADE");
-
+      // RESET BEFEHL AKTIVIERT
+      console.log("Führe Datenbank-Reset aus...");
+      await pool.query("DROP TABLE IF EXISTS users CASCADE");
       await pool.query(usersTable);
       await pool.query(entriesTable);
-      console.log("Tabellen in Postgres geprüft/erstellt");
+      console.log("Tabellen in Postgres zurückgesetzt");
     } else {
       await pool.query(usersTable.replace('SERIAL PRIMARY KEY', 'INTEGER PRIMARY KEY AUTOINCREMENT'));
       await pool.query(entriesTable.replace('SERIAL PRIMARY KEY', 'INTEGER PRIMARY KEY AUTOINCREMENT').replace('TIMESTAMP', 'TEXT'));
-      console.log("Tabellen in SQLite geprüft/erstellt");
     }
   } catch (err) {
-    console.error("Fehler beim Erstellen der Tabellen:", err);
+    console.error("Fehler beim Erstellen/Reset der Tabellen:", err);
   }
 };
 
