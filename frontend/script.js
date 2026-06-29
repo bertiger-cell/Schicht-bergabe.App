@@ -62,6 +62,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.toggle('dark-mode');
     localStorage.setItem('dark-mode', document.body.classList.contains('dark-mode'));
   });
+
+  // Logout Logik
+  document.getElementById('logout-btn').addEventListener('click', () => {
+    currentUser = null;
+    document.getElementById('main-form').style.display = 'none';
+    document.getElementById('entries-section').style.display = 'none';
+    document.getElementById('auth-screen').style.display = 'block';
+    document.getElementById('logout-btn').style.display = 'none';
+    // Felder leeren
+    document.getElementById('login-user').value = '';
+    document.getElementById('login-password').value = '';
+  });
 });
 
 async function login() {
@@ -81,6 +93,7 @@ async function login() {
     document.getElementById('main-form').style.display = 'block';
     document.getElementById('operator').value = currentUser;
     document.getElementById('issuer').value = currentUser;
+    document.getElementById('logout-btn').style.display = 'flex';
 
     // Datum und Uhrzeit vorbefüllen
     const now = new Date();
