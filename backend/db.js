@@ -1,149 +1,86 @@
-const { Pool } = require('pg');
+const { createClient } = require('@supabase/supabase-js');
 
-let pool;
-let isPostgres = false;
+// Diese Werte kommen von Render (Environment Variables)
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
-// Wir prüfen, ob die Einzeldaten für die Datenbank vorhanden sind
-if (process.env.DB_HOST) {
-  pool = new Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME || 'postgres',
-    password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT || 6543,
-    ssl: { rejectUnauthorized: false },
-    connectionTimeoutMillis: 5000
-  });
-  isPostgres = true;
-  console.log("PostgreSQL (Einzelwerte) erkannt. Verbinde...");
-} else if (process.env.DATABASE_URL) {
-  pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-  });
-  isPostgres = true;
-  console.log("DATABASE_URL erkannt. Verbinde...");
-} else {
-  const sqlite3 = require('sqlite3').verbose();
-  const path = require('path');
-  const dbFile = path.join(__dirname, '../database.db');
-  const sqliteDb = new sqlite3.Database(dbFile);
-
-  pool = {
-    query: (text, params) => {
-      return new Promise((resolve, reject) => {
-        const method = text.trim().toLowerCase().startsWith('select') ? 'all' : 'run';
-        sqliteDb[method](text.replace(/\$/g, '?'), params, function(err, rows) {
-          if (err) reject(err);
-          else resolve({ rows: rows || [], lastID: this.lastID });
-        });
-      });
-    }
-  };
-  console.log("Nutze lokale SQLite Datenbank");
-}
-
-const initDb = async () => {
-  const usersTable = `
-    CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
-      username TEXT UNIQUE,
-      password TEXT
-    )`;
-
-  const entriesTable = `
-    CREATE TABLE IF NOT EXISTS entries (
-      id SERIAL PRIMARY KEY,
-      machine TEXT,
-      operator TEXT,
-      additionalEmployee TEXT,
-      date TEXT,
-      workTime TEXT,
-      incidentFrom TEXT,
-      incidentTo TEXT,
-      completedTasks TEXT,
-      incidents TEXT,
-      pendingWorks TEXT,
-      issuer TEXT,
-      issuerDate TEXT,
-      issuerTime TEXT,
-      photos TEXT,
-      userId TEXT,
-      createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )`;
-
-  try {
-    if (isPostgres) {
-      console.log("Erzwinge Tabellen-Reset...");
-      await pool.query("DROP TABLE IF EXISTS users CASCADE");
-      await pool.query(usersTable);
-      await pool.query(entriesTable);
-      console.log("Datenbank erfolgreich zurückgesetzt!");
-    } else {
-      await pool.query(usersTable.replace('SERIAL PRIMARY KEY', 'INTEGER PRIMARY KEY AUTOINCREMENT'));
-      await pool.query(entriesTable.replace('SERIAL PRIMARY KEY', 'INTEGER PRIMARY KEY AUTOINCREMENT').replace('TIMESTAMP', 'TEXT'));
-    }
-  } catch (err) {
-    console.error("Datenbank-Initialisierungsfehler:", err.message);
-  }
-};
-
-initDb();
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 module.exports = {
   checkUser: async (username, password) => {
-    try {
-      const res = await pool.query('SELECT * FROM users WHERE username = $1 AND password = $2', [username, password]);
-      return res.rows.length > 0;
-    } catch (err) {
-      console.error("Login Fehler:", err.message);
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('username', username)
+      .eq('password', password);
+
+    if (error) {
+      console.error("Login Fehler:", error.message);
       return false;
     }
+    return data && data.length > 0;
   },
+
   getUserCount: async () => {
-    try {
-      const res = await pool.query('SELECT COUNT(*) AS count FROM users');
-      return parseInt(res.rows[0].count);
-    } catch (err) {
-      return 0;
-    }
+    const { count, error } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true });
+
+    if (error) return 0;
+    return count || 0;
   },
+
   createUser: async (username, password) => {
-    try {
-      await pool.query('INSERT INTO users (username, password) VALUES ($1, $2)', [username, password]);
-      return true;
-    } catch (err) {
-      console.error("Registrierung Fehler:", err.message);
+    const { error } = await supabase
+      .from('users')
+      .insert([{ username, password }]);
+
+    if (error) {
+      console.error("Registrierung Fehler:", error.message);
       return false;
     }
+    return true;
   },
+
   getAllEntries: async () => {
-    try {
-      const res = await pool.query('SELECT * FROM entries ORDER BY createdAt DESC');
-      return res.rows;
-    } catch (err) {
+    const { data, error } = await supabase
+      .from('entries')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error("Fehler beim Laden:", error.message);
       return [];
     }
+    return data || [];
   },
+
   saveEntry: async (entry) => {
-    try {
-      const now = new Date();
-      const currentTime = now.toTimeString().slice(0, 5);
-      await pool.query(
-        `INSERT INTO entries (
-          machine, operator, additionalEmployee, date, workTime,
-          incidentFrom, incidentTo, completedTasks,
-          incidents, pendingWorks, issuer, issuerDate, issuerTime, photos, userId
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
-        [
-          entry.machine, entry.operator, entry.additionalEmployee, entry.date, entry.workTime,
-          entry.incidentFrom, entry.incidentTo, entry.completedTasks,
-          entry.incidents, entry.pendingWorks, entry.issuer, entry.issuerDate,
-          currentTime, JSON.stringify(entry.photos || []), entry.userId
-        ]
-      );
-    } catch (err) {
-      console.error("Speichern Fehler:", err.message);
+    const now = new Date();
+    const currentTime = now.toTimeString().slice(0, 5);
+
+    const { error } = await supabase
+      .from('entries')
+      .insert([{
+        machine: entry.machine,
+        operator: entry.operator,
+        additional_employee: entry.additionalEmployee,
+        date: entry.date,
+        work_time: entry.workTime,
+        incident_from: entry.incidentFrom,
+        incident_to: entry.incidentTo,
+        completed_tasks: entry.completedTasks,
+        incidents: entry.incidents,
+        pending_works: entry.pendingWorks,
+        issuer: entry.issuer,
+        issuer_date: entry.issuerDate,
+        issuer_time: currentTime,
+        photos: JSON.stringify(entry.photos || []),
+        user_id: entry.userId
+      }]);
+
+    if (error) {
+      console.error("Speichern Fehler:", error.message);
     }
   }
 };
