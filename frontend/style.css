@@ -1,19 +1,42 @@
+:root {
+  --bg-color: #fafafa;
+  --container-bg: white;
+  --text-color: #333;
+  --border-color: #eee;
+  --input-bg: white;
+  --input-border: #ddd;
+  --header-bg: #f8f9fa;
+  --entry-bg: #f9f9f9;
+}
+
+.dark-mode {
+  --bg-color: #121212;
+  --container-bg: #1e1e1e;
+  --text-color: #e0e0e0;
+  --border-color: #333;
+  --input-bg: #2d2d2d;
+  --input-border: #444;
+  --header-bg: #252525;
+  --entry-bg: #252525;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   margin: 0;
   padding: 12px;
-  background: #fafafa;
-  color: #333;
+  background: var(--bg-color);
+  color: var(--text-color);
   font-size: 16px;
   -webkit-tap-highlight-color: transparent;
+  transition: background 0.3s, color 0.3s;
 }
 
 .container {
   max-width: 100%;
   margin: 0 auto;
-  background: white;
+  background: var(--container-bg);
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   overflow: hidden;
 }
 
@@ -22,8 +45,8 @@ header {
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  border-bottom: 1px solid #eee;
-  background: #f8f9fa;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--header-bg);
 }
 
 .logo {
@@ -32,13 +55,18 @@ header {
   color: #007bff;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
 .header-right img {
   height: 32px;
 }
 
 .section {
   padding: 20px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .section:last-child {
@@ -53,18 +81,19 @@ header {
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
-  color: #555;
+  color: var(--text-color);
+  opacity: 0.8;
   font-size: 0.9rem;
 }
 
 .field input {
   width: 100%;
   padding: 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--input-border);
   border-radius: 8px;
   font-size: 16px;
-  background: white;
-  color: #333;
+  background: var(--input-bg);
+  color: var(--text-color);
 }
 
 /* Uhrzeit-Paar nur für Wartungen/Störungen */
@@ -80,23 +109,23 @@ header {
 }
 .time-pair input {
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--input-border);
   border-radius: 8px;
   font-size: 16px;
-  background: white;
+  background: var(--input-bg);
+  color: var(--text-color);
   width: 100%;
 }
 
-/* Großes Textfeld */
 textarea {
   width: 100%;
   min-height: 120px;
   padding: 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--input-border);
   border-radius: 8px;
   font-size: 16px;
-  background: white;
-  color: #333;
+  background: var(--input-bg);
+  color: var(--text-color);
   resize: vertical;
   box-sizing: border-box;
   font-family: inherit;
@@ -120,14 +149,14 @@ textarea:focus {
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  border: 1px solid #eee;
-  background: white;
+  border: 1px solid var(--border-color);
+  background: var(--input-bg);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   font-size: 18px;
-  color: #666;
+  color: var(--text-color);
   transition: all 0.2s;
 }
 
@@ -169,10 +198,10 @@ textarea:focus {
 /* Entry List */
 .entry-item {
   padding: 16px;
-  border: 1px solid #eee;
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   margin-bottom: 12px;
-  background: #f9f9f9;
+  background: var(--entry-bg);
 }
 .entry-header {
   font-weight: 600;
@@ -188,6 +217,7 @@ footer {
   text-align: center;
   padding: 16px;
   font-size: 0.8rem;
-  color: #777;
-  background: #f8f9fa;
+  color: var(--text-color);
+  opacity: 0.6;
+  background: var(--header-bg);
 }

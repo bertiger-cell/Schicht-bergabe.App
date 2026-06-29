@@ -51,6 +51,17 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
   });
+
+  // Dark Mode Toggle
+  const toggleBtn = document.getElementById('theme-toggle');
+  if (localStorage.getItem('dark-mode') === 'true') {
+    document.body.classList.add('dark-mode');
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('dark-mode', document.body.classList.contains('dark-mode'));
+  });
 });
 
 async function login() {
