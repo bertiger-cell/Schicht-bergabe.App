@@ -43,16 +43,21 @@ module.exports = {
   },
 
   getAllEntries: async () => {
-    const { data, error } = await supabase
-      .from('entries')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('entries')
+        .select('*')
+        .order('id', { ascending: false }); // Sortierung nach ID ist sicherer
 
-    if (error) {
-      console.error("Fehler beim Laden:", error.message);
+      if (error) {
+        console.error("Fehler beim Laden der Einträge:", error.message);
+        return [];
+      }
+      return data || [];
+    } catch (err) {
+      console.error("Unerwarteter Fehler in getAllEntries:", err.message);
       return [];
     }
-    return data || [];
   },
 
   saveEntry: async (entry) => {

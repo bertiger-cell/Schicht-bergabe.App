@@ -145,12 +145,18 @@ async function saveEntry() {
 }
 
 async function loadEntries() {
+  console.log("Lade Einträge...");
   const response = await fetch('/api/entries');
   if (response.ok) {
     const entries = await response.json();
+    console.log("Einträge empfangen:", entries.length);
     window.allEntries = entries; // Für PDF-Export speichern
     const container = document.getElementById('entries-list');
     container.innerHTML = '';
+
+    if (entries.length === 0) {
+      container.innerHTML = '<p style="text-align:center; color:#888;">Noch keine Übergaben vorhanden.</p>';
+    }
 
     entries.forEach(entry => {
       // Extra sicheres Mapping für alle Feld-Varianten
@@ -201,15 +207,14 @@ async function loadEntries() {
       container.appendChild(div);
     });
 
-    window.loadedEntries = entries; // Für die Bildanzeige
-
+    window.allEntries = entries; // Für die Bildanzeige und PDF
     document.getElementById('entries-section').style.display = 'block';
   }
 }
 
 function viewPhoto(photoId) {
   let photoData = null;
-  (window.loadedEntries || []).forEach(entry => {
+  (window.allEntries || []).forEach(entry => {
     try {
       const photos = JSON.parse(entry.photos || '[]');
       const p = photos.find(item => item.id === photoId);

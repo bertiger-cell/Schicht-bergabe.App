@@ -48,14 +48,24 @@ app.post('/api/register', async (req, res) => {
 });
 
 app.get('/api/entries', async (req, res) => {
-  const entries = await db.getAllEntries();
-  res.json(entries);
+  try {
+    const entries = await db.getAllEntries();
+    res.json(entries);
+  } catch (err) {
+    console.error("Route /api/entries Fehler:", err.message);
+    res.status(500).json([]);
+  }
 });
 
 app.post('/api/entries', async (req, res) => {
-  const entry = req.body;
-  await db.saveEntry(entry);
-  res.json({ success: true });
+  try {
+    const entry = req.body;
+    await db.saveEntry(entry);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Route POST /api/entries Fehler:", err.message);
+    res.status(500).send('Fehler beim Speichern');
+  }
 });
 
 app.listen(PORT, () => {
