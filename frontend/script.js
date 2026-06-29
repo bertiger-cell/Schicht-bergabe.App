@@ -153,18 +153,18 @@ async function loadEntries() {
     container.innerHTML = '';
 
     entries.forEach(entry => {
-      // Mapping: Supabase Namen (snake_case) zu Frontend Namen (camelCase) konvertieren
+      // Extra sicheres Mapping für alle Feld-Varianten
       const d = {
-        date: entry.date,
-        workTime: entry.work_time || entry.workTime,
-        machine: entry.machine,
-        completedTasks: entry.completed_tasks || entry.completedTasks,
-        incidents: entry.incidents,
-        incidentFrom: entry.incident_from || entry.incidentFrom,
-        incidentTo: entry.incident_to || entry.incidentTo,
-        pendingWorks: entry.pending_works || entry.pendingWorks,
-        issuer: entry.issuer,
-        issuerTime: entry.issuer_time || entry.issuerTime,
+        date: entry.date || entry.issuer_date || '-',
+        workTime: entry.work_time || entry.workTime || 'Nicht angegeben',
+        machine: entry.machine || 'Prod.-bereich',
+        completedTasks: entry.completed_tasks || entry.completedTasks || '',
+        incidents: entry.incidents || '',
+        incidentFrom: entry.incident_from || entry.incidentFrom || '',
+        incidentTo: entry.incident_to || entry.incidentTo || '',
+        pendingWorks: entry.pending_works || entry.pendingWorks || '',
+        issuer: entry.issuer || 'Unbekannt',
+        issuerTime: entry.issuer_time || entry.issuerTime || '--:--',
         photos: entry.photos
       };
 
