@@ -116,6 +116,8 @@ function createDailyPDF() {
   const content = document.createElement('div');
   content.style.padding = '30px';
   content.style.fontFamily = 'Arial, sans-serif';
+  content.style.backgroundColor = 'white'; // Hintergrund erzwingen
+  content.style.color = 'black'; // Textfarbe erzwingen
 
   const machine = document.getElementById('machine').value || "Prod.-bereich";
   const date = document.getElementById('date').value;
@@ -178,6 +180,8 @@ function createWeeklyPDF() {
 
   const content = document.createElement('div');
   content.style.padding = '20px';
+  content.style.backgroundColor = 'white'; // Hintergrund erzwingen
+  content.style.color = 'black'; // Textfarbe erzwingen
   content.innerHTML = `
     <h1>Schichtübergabe – Woche ${monday.toLocaleDateString('de-DE')}</h1>
     <p><strong>Zeitraum:</strong> ${monday.toLocaleDateString('de-DE')} – ${friday.toLocaleDateString('de-DE')}</p>
