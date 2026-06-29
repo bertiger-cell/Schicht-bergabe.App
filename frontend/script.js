@@ -89,11 +89,14 @@ async function login() {
   if (response.ok) {
     const data = await response.json();
     currentUser = data.user;
+    console.log("Login erfolgreich für:", currentUser);
+
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('main-form').style.display = 'block';
+    document.getElementById('logout-btn').style.display = 'inline-block'; // Explizit auf inline-block setzen
+
     document.getElementById('operator').value = currentUser;
     document.getElementById('issuer').value = currentUser;
-    document.getElementById('logout-btn').style.display = 'flex';
 
     // Datum und Uhrzeit vorbefüllen
     const now = new Date();
@@ -172,6 +175,7 @@ async function loadEntries() {
     }
 
     entries.forEach(entry => {
+      console.log("Verarbeite Eintrag:", entry);
       // Extra sicheres Mapping für alle Feld-Varianten
       const d = {
         date: entry.date || entry.issuer_date || '-',
