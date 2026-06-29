@@ -20,30 +20,30 @@ app.get('/', (req, res) => {
 
 // API Routes
 app.post('/api/login', async (req, res) => {
-  const { user, password } = req.body;
-  const userExists = await db.checkUser(user, password);
-  if (userExists) {
-    res.json({ success: true, user });
-  } else {
-    res.status(401).send('Ungültige Anmeldedaten');
+  try {
+    const { user, password } = req.body;
+    const userExists = await db.checkUser(user, password);
+    if (userExists) {
+      res.json({ success: true, user });
+    } else {
+      res.status(401).send('Ungültige Anmeldedaten oder Benutzer nicht gefunden');
+    }
+  } catch (err) {
+    res.status(500).send('Datenbankfehler: ' + err.message);
   }
 });
 
 app.post('/api/register', async (req, res) => {
   try {
     const { user, password } = req.body;
-    const count = await db.getUserCount();
-    if (count >= 10) { // Erhöht auf 10
-      return res.status(400).send('Max. 10 Benutzer erlaubt');
-    }
     const success = await db.createUser(user, password);
     if (success) {
       res.json({ success: true });
     } else {
-      res.status(400).send('Benutzer existiert bereits oder Datenbankfehler');
+      res.status(400).send('Registrierung fehlgeschlagen (Name evtl. vergeben)');
     }
   } catch (err) {
-    res.status(500).send('Serverfehler: ' + err.message);
+    res.status(500).send('Datenbankfehler: ' + err.message);
   }
 });
 
