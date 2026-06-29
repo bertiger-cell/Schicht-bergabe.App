@@ -111,6 +111,37 @@ async function loadEntries() {
   }
 }
 
+// Spracheingabe (Microphone)
+function startSpeech(targetId) {
+  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.lang = 'de-DE';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  const btn = event.currentTarget;
+  btn.style.backgroundColor = '#ffcccc'; // Zeigt an, dass aufgenommen wird
+
+  recognition.start();
+
+  recognition.onresult = (event) => {
+    const speechResult = event.results[0][0].transcript;
+    const textarea = document.getElementById(targetId);
+    textarea.value += (textarea.value ? ' ' : '') + speechResult;
+    btn.style.backgroundColor = '';
+  };
+
+  recognition.onspeechend = () => {
+    recognition.stop();
+    btn.style.backgroundColor = '';
+  };
+
+  recognition.onerror = (event) => {
+    console.error('Spracherkennung Fehler:', event.error);
+    btn.style.backgroundColor = '';
+    alert('Spracherkennung fehlgeschlagen oder nicht erlaubt.');
+  };
+}
+
 // PDF: Heutige Übergabe
 function createDailyPDF() {
   const content = document.createElement('div');

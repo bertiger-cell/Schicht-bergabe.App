@@ -51,8 +51,9 @@
             <label>erledigte Aufgaben</label>
             <textarea id="completedTasks" placeholder="Was wurde heute erledigt?"></textarea>
             <div class="textarea-actions">
-                <div class="icon-btn" title="Foto hinzufügen">📷</div>
-                <div class="icon-btn" title="Spracheingabe">🎤</div>
+                <input type="file" id="photo-completed" accept="image/*" capture="environment" style="display:none;">
+                <div class="icon-btn" title="Foto hinzufügen" onclick="document.getElementById('photo-completed').click()">📷</div>
+                <div class="icon-btn" title="Spracheingabe" onclick="startSpeech('completedTasks')">🎤</div>
             </div>
         </div>
 
@@ -65,8 +66,9 @@
             </div>
             <textarea id="incidents" placeholder="Beschreibung der Störung / Wartung"></textarea>
             <div class="textarea-actions">
-                <div class="icon-btn" title="Foto hinzufügen">📷</div>
-                <div class="icon-btn" title="Spracheingabe">🎤</div>
+                <input type="file" id="photo-incidents" accept="image/*" capture="environment" style="display:none;">
+                <div class="icon-btn" title="Foto hinzufügen" onclick="document.getElementById('photo-incidents').click()">📷</div>
+                <div class="icon-btn" title="Spracheingabe" onclick="startSpeech('incidents')">🎤</div>
             </div>
         </div>
 
@@ -75,8 +77,9 @@
             <label>Zu erledigende Arbeiten</label>
             <textarea id="pendingWorks" placeholder="Was muss noch erledigt werden?"></textarea>
             <div class="textarea-actions">
-                <div class="icon-btn" title="Foto hinzufügen">📷</div>
-                <div class="icon-btn" title="Spracheingabe">🎤</div>
+                <input type="file" id="photo-pending" accept="image/*" capture="environment" style="display:none;">
+                <div class="icon-btn" title="Foto hinzufügen" onclick="document.getElementById('photo-pending').click()">📷</div>
+                <div class="icon-btn" title="Spracheingabe" onclick="startSpeech('pendingWorks')">🎤</div>
             </div>
         </div>
 
