@@ -153,8 +153,23 @@ async function loadEntries() {
     container.innerHTML = '';
 
     entries.forEach(entry => {
+      // Mapping: Supabase Namen (snake_case) zu Frontend Namen (camelCase) konvertieren
+      const d = {
+        date: entry.date,
+        workTime: entry.work_time || entry.workTime,
+        machine: entry.machine,
+        completedTasks: entry.completed_tasks || entry.completedTasks,
+        incidents: entry.incidents,
+        incidentFrom: entry.incident_from || entry.incidentFrom,
+        incidentTo: entry.incident_to || entry.incidentTo,
+        pendingWorks: entry.pending_works || entry.pendingWorks,
+        issuer: entry.issuer,
+        issuerTime: entry.issuer_time || entry.issuerTime,
+        photos: entry.photos
+      };
+
       let photos = [];
-      try { photos = JSON.parse(entry.photos || '[]'); } catch(e) {}
+      try { photos = JSON.parse(d.photos || '[]'); } catch(e) {}
 
       const renderText = (text) => {
         if (!text) return '-';
@@ -170,16 +185,16 @@ async function loadEntries() {
       const div = document.createElement('div');
       div.className = 'entry-item';
       div.innerHTML = `
-        <div class="entry-header">Datum: ${entry.date} | Arbeitszeit: ${entry.workTime || 'Nicht angegeben'}</div>
+        <div class="entry-header">Datum: ${d.date} | Arbeitszeit: ${d.workTime || 'Nicht angegeben'}</div>
         <div class="entry-body">
-            <p><strong>Prod.-bereich:</strong> ${entry.machine || 'Prod.-bereich'}</p>
-            <p><strong>Erledigte Aufgaben:</strong><br>${renderText(entry.completedTasks)}</p>
-            ${entry.incidents || entry.incidentFrom || entry.incidentTo ? `
-              <p><strong>Wartung / Störung (${entry.incidentFrom || ''} - ${entry.incidentTo || ''}):</strong><br>${renderText(entry.incidents)}</p>
+            <p><strong>Prod.-bereich:</strong> ${d.machine || 'Prod.-bereich'}</p>
+            <p><strong>Erledigte Aufgaben:</strong><br>${renderText(d.completedTasks)}</p>
+            ${d.incidents || d.incidentFrom || d.incidentTo ? `
+              <p><strong>Wartung / Störung (${d.incidentFrom || ''} - ${d.incidentTo || ''}):</strong><br>${renderText(d.incidents)}</p>
             ` : ''}
-            <p><strong>Zu erledigende Aufgaben:</strong><br>${renderText(entry.pendingWorks)}</p>
+            <p><strong>Zu erledigende Aufgaben:</strong><br>${renderText(d.pendingWorks)}</p>
             <p style="font-size: 0.85rem; color: #666; margin-top: 10px; border-top: 1px solid #eee; pt: 5px;">
-                Ausgestellt von ${entry.issuer} um ${entry.issuerTime} Uhr
+                Ausgestellt von ${d.issuer || 'Unbekannt'} um ${d.issuerTime || '--:--'} Uhr
             </p>
         </div>
       `;
