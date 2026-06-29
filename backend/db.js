@@ -74,12 +74,11 @@ const initDb = async () => {
 
   try {
     if (isPostgres) {
-      // Einmaliger Reset für sauberen Start (Wird nur ausgeführt wenn Verbindung steht)
-      // await pool.query("DROP TABLE IF EXISTS users CASCADE");
-
+      console.log("Erzwinge Tabellen-Reset...");
+      await pool.query("DROP TABLE IF EXISTS users CASCADE");
       await pool.query(usersTable);
       await pool.query(entriesTable);
-      console.log("Tabellen in Postgres bereit!");
+      console.log("Datenbank erfolgreich zurückgesetzt!");
     } else {
       await pool.query(usersTable.replace('SERIAL PRIMARY KEY', 'INTEGER PRIMARY KEY AUTOINCREMENT'));
       await pool.query(entriesTable.replace('SERIAL PRIMARY KEY', 'INTEGER PRIMARY KEY AUTOINCREMENT').replace('TIMESTAMP', 'TEXT'));
