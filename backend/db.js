@@ -17,6 +17,9 @@ db.serialize(() => {
     operator TEXT,
     additionalEmployee TEXT,
     date TEXT,
+    workTime TEXT,
+    incidentFrom TEXT,
+    incidentTo TEXT,
     completedTasks TEXT,
     incidents TEXT,
     pendingWorks TEXT,
@@ -72,22 +75,29 @@ module.exports = {
 
   saveEntry: (entry) => {
     return new Promise((resolve, reject) => {
+      const now = new Date();
+      const currentTime = now.toTimeString().slice(0, 5);
+
       db.run(
         `INSERT INTO entries (
-          machine, operator, additionalEmployee, date, completedTasks,
+          machine, operator, additionalEmployee, date, workTime,
+          incidentFrom, incidentTo, completedTasks,
           incidents, pendingWorks, issuer, issuerDate, issuerTime, userId
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           entry.machine,
           entry.operator,
           entry.additionalEmployee,
           entry.date,
+          entry.workTime,
+          entry.incidentFrom,
+          entry.incidentTo,
           entry.completedTasks,
           entry.incidents,
           entry.pendingWorks,
           entry.issuer,
           entry.issuerDate,
-          entry.issuerTime,
+          currentTime,
           entry.userId
         ],
         (err) => {

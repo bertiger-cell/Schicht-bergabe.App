@@ -34,20 +34,16 @@
     <!-- Hauptformular (nur sichtbar nach Login) -->
     <div id="main-form" class="section" style="display:none;">
         <div class="field">
-            <label>Maschine / Prod.-bereich</label>
-            <input type="text" id="machine" placeholder="z.B. Laserschneideanlage LSA-5" />
-        </div>
-        <div class="field">
-            <label>Haupt-Mitarbeiter</label>
-            <input type="text" id="operator" placeholder="Wird beim Login gesetzt" readonly />
-        </div>
-        <div class="field">
-            <label>Weiterer Mitarbeiter</label>
-            <input type="text" id="additionalEmployee" placeholder="Name eingeben" />
+            <label>Prod.-bereich</label>
+            <input type="text" id="machine" placeholder="Standard Prod.-bereich" />
         </div>
         <div class="field">
             <label>Datum</label>
             <input type="date" id="date" />
+        </div>
+        <div class="field">
+            <label>Arbeitszeit (von - bis)</label>
+            <input type="text" id="workTime" placeholder="z.B. 06:00 - 14:00" />
         </div>
 
         <!-- erledigte Aufgaben -->
@@ -91,12 +87,8 @@
                 <label>Ausgestellt durch:</label>
                 <input type="text" id="issuer" placeholder="Wird beim Login gesetzt" readonly />
             </div>
-            <div class="field">
-                <label>Datum</label>
+            <div style="display:none;">
                 <input type="date" id="issuerDate" />
-            </div>
-            <div class="field">
-                <label>Uhrzeit</label>
                 <input type="time" id="issuerTime" />
             </div>
 
@@ -124,6 +116,7 @@
     </footer>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

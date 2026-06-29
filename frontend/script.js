@@ -50,16 +50,18 @@ async function register() {
 
 async function saveEntry() {
   const entry = {
-    machine: document.getElementById('machine').value,
-    operator: document.getElementById('operator').value,
-    additionalEmployee: document.getElementById('additionalEmployee').value,
+    machine: document.getElementById('machine').value || "Prod.-bereich",
+    operator: currentUser,
+    additionalEmployee: "",
     date: document.getElementById('date').value,
+    workTime: document.getElementById('workTime').value,
+    incidentFrom: document.getElementById('incident-from').value,
+    incidentTo: document.getElementById('incident-to').value,
     completedTasks: document.getElementById('completedTasks').value,
     incidents: document.getElementById('incidents').value,
     pendingWorks: document.getElementById('pendingWorks').value,
     issuer: document.getElementById('issuer').value,
-    issuerDate: document.getElementById('issuerDate').value,
-    issuerTime: document.getElementById('issuerTime').value,
+    issuerDate: document.getElementById('date').value,
     userId: currentUser
   };
 
@@ -89,10 +91,18 @@ async function loadEntries() {
       const div = document.createElement('div');
       div.className = 'entry-item';
       div.innerHTML = `
-        <div class="entry-header">${entry.date}</div>
-        <p><strong>Maschine:</strong> ${entry.machine}</p>
-        <p><strong>Ausgestellt:</strong> ${entry.issuer} (${entry.issuerTime})</p>
-        <p><strong>Aufgaben:</strong><br>${entry.completedTasks.replace(/\n/g, '<br>')}</p>
+        <div class="entry-header">Datum: ${entry.date} | Arbeitszeit: ${entry.workTime || 'Nicht angegeben'}</div>
+        <div class="entry-body">
+            <p><strong>Prod.-bereich:</strong> ${entry.machine || 'Prod.-bereich'}</p>
+            <p><strong>Erledigte Aufgaben:</strong><br>${entry.completedTasks ? entry.completedTasks.replace(/\n/g, '<br>') : '-'}</p>
+            ${entry.incidents || entry.incidentFrom || entry.incidentTo ? `
+              <p><strong>Wartung / Störung (${entry.incidentFrom || ''} - ${entry.incidentTo || ''}):</strong><br>${entry.incidents ? entry.incidents.replace(/\n/g, '<br>') : '-'}</p>
+            ` : ''}
+            <p><strong>Zu erledigende Aufgaben:</strong><br>${entry.pendingWorks ? entry.pendingWorks.replace(/\n/g, '<br>') : '-'}</p>
+            <p style="font-size: 0.85rem; color: #666; margin-top: 10px; border-top: 1px solid #eee; pt: 5px;">
+                Ausgestellt von ${entry.issuer} um ${entry.issuerTime} Uhr
+            </p>
+        </div>
       `;
       container.appendChild(div);
     });
@@ -103,26 +113,49 @@ async function loadEntries() {
 
 // PDF: Heutige Übergabe
 function createDailyPDF() {
-  const entryDiv = document.createElement('div');
-  entryDiv.innerHTML = `
-    <h1>Schichtübergabe – Heute</h1>
-    <p><strong>Maschine:</strong> ${document.getElementById('machine').value}</p>
-    <p><strong>Ausgestellt:</strong> ${document.getElementById('issuer').value}</p>
-    <p><strong>Datum:</strong> ${document.getElementById('issuerDate').value}</p>
-    <p><strong>Uhrzeit:</strong> ${document.getElementById('issuerTime').value}</p>
-    <p><strong>Aufgaben:</strong><br>${document.getElementById('completedTasks').value.replace(/\n/g, '<br>')}</p>
-    <p><strong>Folgearbeiten:</strong><br>${document.getElementById('pendingWorks').value.replace(/\n/g, '<br>')}</p>
+  const content = document.createElement('div');
+  content.style.padding = '30px';
+  content.style.fontFamily = 'Arial, sans-serif';
+
+  const machine = document.getElementById('machine').value || "Prod.-bereich";
+  const date = document.getElementById('date').value;
+  const workTime = document.getElementById('workTime').value;
+  const completed = document.getElementById('completedTasks').value;
+  const incidentFrom = document.getElementById('incident-from').value;
+  const incidentTo = document.getElementById('incident-to').value;
+  const incidents = document.getElementById('incidents').value;
+  const pending = document.getElementById('pendingWorks').value;
+  const issuer = document.getElementById('issuer').value;
+
+  content.innerHTML = `
+    <h1 style="color: #007bff; border-bottom: 2px solid #007bff; pb: 10px;">Schichtübergabe</h1>
+    <p><strong>Datum:</strong> ${date} | <strong>Arbeitszeit:</strong> ${workTime || '-'}</p>
+    <p><strong>Prod.-bereich:</strong> ${machine}</p>
+    <hr>
+    <h3>Erledigte Aufgaben:</h3>
+    <p>${completed ? completed.replace(/\n/g, '<br>') : '-'}</p>
+
+    ${incidents || incidentFrom || incidentTo ? `
+      <h3>Wartung / Störung (${incidentFrom} - ${incidentTo}):</h3>
+      <p>${incidents ? incidents.replace(/\n/g, '<br>') : '-'}</p>
+    ` : ''}
+
+    <h3>Zu erledigende Arbeiten:</h3>
+    <p>${pending ? pending.replace(/\n/g, '<br>') : '-'}</p>
+
+    <div style="margin-top: 50px; border-top: 1px solid #ccc; pt: 10px;">
+      <p><strong>Ausgestellt durch:</strong> ${issuer}</p>
+      <p><strong>Erstellt am:</strong> ${new Date().toLocaleString('de-DE')}</p>
+    </div>
   `;
 
-  entryDiv.style.position = 'absolute';
-  entryDiv.style.left = '-9999px';
-  document.body.appendChild(entryDiv);
-
-  import('https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js').then(module => {
-    const html2pdf = module.default || module;
-    html2pdf().from(entryDiv).save(`uebergabe_heute_${new Date().toISOString().slice(0, 10)}.pdf`);
-    document.body.removeChild(entryDiv);
-  }).catch(e => console.error(e));
+  html2pdf().from(content).set({
+    margin: 10,
+    filename: `uebergabe_${date}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  }).save();
 }
 
 // PDF: Gesamte Woche
@@ -151,23 +184,27 @@ function createWeeklyPDF() {
     <hr>
     ${weekEntries.length === 0 ? '<p>Keine Einträge für diese Woche gefunden.</p>' : weekEntries.map(e => `
       <div style="margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
-        <h3>Datum: ${e.date} (${e.issuerTime})</h3>
-        <p><strong>Maschine:</strong> ${e.machine}</p>
-        <p><strong>Mitarbeiter:</strong> ${e.operator} ${e.additionalEmployee ? ', ' + e.additionalEmployee : ''}</p>
-        <p><strong>Erledigte Aufgaben:</strong><br>${e.completedTasks.replace(/\n/g, '<br>')}</p>
-        <p><strong>Störungen/Wartungen:</strong><br>${e.incidents.replace(/\n/g, '<br>')}</p>
-        <p><strong>Anstehende Arbeiten:</strong><br>${e.pendingWorks.replace(/\n/g, '<br>')}</p>
+        <h3>Datum: ${e.date} | Arbeitszeit: ${e.workTime || '-'}</h3>
+        <p><strong>Prod.-bereich:</strong> ${e.machine || 'Prod.-bereich'}</p>
+        <p><strong>Erledigte Aufgaben:</strong><br>${e.completedTasks ? e.completedTasks.replace(/\n/g, '<br>') : '-'}</p>
+        ${e.incidents || e.incidentFrom || e.incidentTo ? `
+          <p><strong>Wartung / Störung (${e.incidentFrom || ''} - ${e.incidentTo || ''}):</strong><br>${e.incidents ? e.incidents.replace(/\n/g, '<br>') : '-'}</p>
+        ` : ''}
+        <p><strong>Anstehende Arbeiten:</strong><br>${e.pendingWorks ? e.pendingWorks.replace(/\n/g, '<br>') : '-'}</p>
+        <p style="font-size: 0.8rem; color: #666;">Ausgestellt von ${e.issuer} um ${e.issuerTime}</p>
       </div>
     `).join('')}
+
   `;
 
   content.style.position = 'absolute';
   content.style.left = '-9999px';
   document.body.appendChild(content);
 
-  import('https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js').then(module => {
-    const html2pdf = module.default || module;
-    html2pdf().from(content).save(`uebergabe_woche_${monday.toISOString().slice(0, 10)}.pdf`);
-    document.body.removeChild(content);
-  }).catch(e => console.error(e));
+  html2pdf().from(content).set({
+    margin: 10,
+    filename: `uebergabe_woche_${monday.toISOString().slice(0, 10)}.pdf`,
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  }).save();
+  document.body.removeChild(content);
 }
