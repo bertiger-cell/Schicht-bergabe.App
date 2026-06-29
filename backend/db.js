@@ -26,6 +26,7 @@ db.serialize(() => {
     issuer TEXT,
     issuerDate TEXT,
     issuerTime TEXT,
+    photos TEXT,
     userId TEXT,
     createdAt TEXT DEFAULT CURRENT_TIMESTAMP
   )`);
@@ -82,8 +83,8 @@ module.exports = {
         `INSERT INTO entries (
           machine, operator, additionalEmployee, date, workTime,
           incidentFrom, incidentTo, completedTasks,
-          incidents, pendingWorks, issuer, issuerDate, issuerTime, userId
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          incidents, pendingWorks, issuer, issuerDate, issuerTime, photos, userId
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           entry.machine,
           entry.operator,
@@ -98,6 +99,7 @@ module.exports = {
           entry.issuer,
           entry.issuerDate,
           currentTime,
+          JSON.stringify(entry.photos || []),
           entry.userId
         ],
         (err) => {

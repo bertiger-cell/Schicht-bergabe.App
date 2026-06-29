@@ -1,4 +1,57 @@
 let currentUser = null;
+let currentPhotos = [];
+
+// Hilfsfunktion: Bild verkleinern
+function processImage(file, targetId) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+      const max = 800; // Maximale Breite/Höhe
+      if (width > height) {
+        if (width > max) { height *= max / width; width = max; }
+      } else {
+        if (height > max) { width *= max / height; height = max; }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const base64 = canvas.toDataURL('image/jpeg', 0.7);
+      const photoId = 'img_' + Date.now();
+      currentPhotos.push({ id: photoId, data: base64 });
+
+      const textarea = document.getElementById(targetId);
+      textarea.value += (textarea.value ? '\n' : '') + `[FOTO:${photoId}]`;
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// Event Listener für Foto-Inputs
+document.addEventListener('DOMContentLoaded', () => {
+  const inputs = [
+    { input: 'photo-completed', target: 'completedTasks' },
+    { input: 'photo-incidents', target: 'incidents' },
+    { input: 'photo-pending', target: 'pendingWorks' }
+  ];
+
+  inputs.forEach(item => {
+    const el = document.getElementById(item.input);
+    if (el) {
+      el.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+          processImage(e.target.files[0], item.target);
+        }
+      });
+    }
+  });
+});
 
 async function login() {
   const user = document.getElementById('login-user').value;
@@ -62,6 +115,7 @@ async function saveEntry() {
     pendingWorks: document.getElementById('pendingWorks').value,
     issuer: document.getElementById('issuer').value,
     issuerDate: document.getElementById('date').value,
+    photos: currentPhotos,
     userId: currentUser
   };
 
@@ -88,17 +142,31 @@ async function loadEntries() {
     container.innerHTML = '';
 
     entries.forEach(entry => {
+      let photos = [];
+      try { photos = JSON.parse(entry.photos || '[]'); } catch(e) {}
+
+      const renderText = (text) => {
+        if (!text) return '-';
+        return text.replace(/\[FOTO:(img_\d+)\]/g, (match, id) => {
+          const photo = photos.find(p => p.id === id);
+          if (photo) {
+            return `<a href="#" onclick="viewPhoto('${photo.id}'); return false;" style="color: #007bff; font-weight: bold;">[📷 FOTO ANZEIGEN]</a>`;
+          }
+          return '[FOTO]';
+        }).replace(/\n/g, '<br>');
+      };
+
       const div = document.createElement('div');
       div.className = 'entry-item';
       div.innerHTML = `
         <div class="entry-header">Datum: ${entry.date} | Arbeitszeit: ${entry.workTime || 'Nicht angegeben'}</div>
         <div class="entry-body">
             <p><strong>Prod.-bereich:</strong> ${entry.machine || 'Prod.-bereich'}</p>
-            <p><strong>Erledigte Aufgaben:</strong><br>${entry.completedTasks ? entry.completedTasks.replace(/\n/g, '<br>') : '-'}</p>
+            <p><strong>Erledigte Aufgaben:</strong><br>${renderText(entry.completedTasks)}</p>
             ${entry.incidents || entry.incidentFrom || entry.incidentTo ? `
-              <p><strong>Wartung / Störung (${entry.incidentFrom || ''} - ${entry.incidentTo || ''}):</strong><br>${entry.incidents ? entry.incidents.replace(/\n/g, '<br>') : '-'}</p>
+              <p><strong>Wartung / Störung (${entry.incidentFrom || ''} - ${entry.incidentTo || ''}):</strong><br>${renderText(entry.incidents)}</p>
             ` : ''}
-            <p><strong>Zu erledigende Aufgaben:</strong><br>${entry.pendingWorks ? entry.pendingWorks.replace(/\n/g, '<br>') : '-'}</p>
+            <p><strong>Zu erledigende Aufgaben:</strong><br>${renderText(entry.pendingWorks)}</p>
             <p style="font-size: 0.85rem; color: #666; margin-top: 10px; border-top: 1px solid #eee; pt: 5px;">
                 Ausgestellt von ${entry.issuer} um ${entry.issuerTime} Uhr
             </p>
@@ -107,7 +175,27 @@ async function loadEntries() {
       container.appendChild(div);
     });
 
+    window.loadedEntries = entries; // Für die Bildanzeige
+
     document.getElementById('entries-section').style.display = 'block';
+  }
+}
+
+function viewPhoto(photoId) {
+  let photoData = null;
+  (window.loadedEntries || []).forEach(entry => {
+    try {
+      const photos = JSON.parse(entry.photos || '[]');
+      const p = photos.find(item => item.id === photoId);
+      if (p) photoData = p.data;
+    } catch(e) {}
+  });
+
+  if (photoData) {
+    const w = window.open("");
+    w.document.write(`<img src="${photoData}" style="max-width:100%; height:auto;">`);
+  } else {
+    alert("Bild konnte nicht geladen werden.");
   }
 }
 
