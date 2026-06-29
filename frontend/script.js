@@ -10,7 +10,7 @@ function processImage(file, targetId) {
       const canvas = document.createElement('canvas');
       let width = img.width;
       let height = img.height;
-      const max = 800; // Maximale Breite/Höhe
+      const max = 800;
       if (width > height) {
         if (width > max) { height *= max / width; width = max; }
       } else {
@@ -20,11 +20,9 @@ function processImage(file, targetId) {
       canvas.height = height;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, width, height);
-
       const base64 = canvas.toDataURL('image/jpeg', 0.7);
       const photoId = 'img_' + Date.now();
       currentPhotos.push({ id: photoId, data: base64 });
-
       const textarea = document.getElementById(targetId);
       textarea.value += (textarea.value ? '\n' : '') + `[FOTO:${photoId}]`;
     };
@@ -33,53 +31,32 @@ function processImage(file, targetId) {
   reader.readAsDataURL(file);
 }
 
-// Event Listener für Foto-Inputs
 document.addEventListener('DOMContentLoaded', () => {
-  const inputs = [
-    { input: 'photo-completed', target: 'completedTasks' },
-    { input: 'photo-incidents', target: 'incidents' },
-    { input: 'photo-pending', target: 'pendingWorks' }
-  ];
-
+  const inputs = [{ input: 'photo-completed', target: 'completedTasks' }, { input: 'photo-incidents', target: 'incidents' }, { input: 'photo-pending', target: 'pendingWorks' }];
   inputs.forEach(item => {
     const el = document.getElementById(item.input);
-    if (el) {
-      el.addEventListener('change', (e) => {
-        if (e.target.files && e.target.files[0]) {
-          processImage(e.target.files[0], item.target);
-        }
-      });
-    }
+    if (el) el.addEventListener('change', (e) => { if (e.target.files && e.target.files[0]) processImage(e.target.files[0], item.target); });
   });
 
-  // Dark Mode Toggle
   const toggleBtn = document.getElementById('theme-toggle');
-  if (localStorage.getItem('dark-mode') === 'true') {
-    document.body.classList.add('dark-mode');
-  }
-
+  if (localStorage.getItem('dark-mode') === 'true') document.body.classList.add('dark-mode');
   toggleBtn.addEventListener('click', () => {
     document.body.classList.toggle('dark-mode');
     localStorage.setItem('dark-mode', document.body.classList.contains('dark-mode'));
   });
 
-  // Logout Logik
   document.getElementById('logout-btn').addEventListener('click', () => {
     currentUser = null;
     document.getElementById('main-form').style.display = 'none';
     document.getElementById('entries-section').style.display = 'none';
     document.getElementById('auth-screen').style.display = 'block';
     document.getElementById('logout-btn').style.display = 'none';
-    // Felder leeren
-    document.getElementById('login-user').value = '';
-    document.getElementById('login-password').value = '';
   });
 });
 
 async function login() {
   const user = document.getElementById('login-user').value;
   const pwd = document.getElementById('login-password').value;
-
   const response = await fetch('/api/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -89,21 +66,14 @@ async function login() {
   if (response.ok) {
     const data = await response.json();
     currentUser = data.user;
-    console.log("Login erfolgreich für:", currentUser);
-
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('main-form').style.display = 'block';
-    document.getElementById('logout-btn').style.display = 'inline-block'; // Explizit auf inline-block setzen
-
+    document.getElementById('logout-btn').style.display = 'inline-block';
     document.getElementById('operator').value = currentUser;
     document.getElementById('issuer').value = currentUser;
 
-    // Datum und Uhrzeit vorbefüllen
     const now = new Date();
     document.getElementById('date').value = now.toISOString().split('T')[0];
-    document.getElementById('issuerDate').value = now.toISOString().split('T')[0];
-    document.getElementById('issuerTime').value = now.toTimeString().slice(0, 5);
-
     loadEntries();
   } else {
     alert('Login fehlgeschlagen');
@@ -113,26 +83,19 @@ async function login() {
 async function register() {
   const user = document.getElementById('reg-user').value;
   const pwd = document.getElementById('reg-password').value;
-
   const response = await fetch('/api/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ user, password: pwd })
   });
-
-  if (response.ok) {
-    alert('Registrierung erfolgreich');
-  } else {
-    const err = await response.text();
-    alert('Registrierung fehlgeschlagen: ' + err);
-  }
+  if (response.ok) alert('Registrierung erfolgreich');
+  else alert('Fehler: ' + await response.text());
 }
 
 async function saveEntry() {
   const entry = {
-    machine: document.getElementById('machine').value || "Prod.-bereich",
+    machine: document.getElementById('machine').value || "Standard-Bereich",
     operator: currentUser,
-    additionalEmployee: "",
     date: document.getElementById('date').value,
     workTime: document.getElementById('workTime').value,
     incidentFrom: document.getElementById('incident-from').value,
@@ -140,7 +103,7 @@ async function saveEntry() {
     completedTasks: document.getElementById('completedTasks').value,
     incidents: document.getElementById('incidents').value,
     pendingWorks: document.getElementById('pendingWorks').value,
-    issuer: document.getElementById('issuer').value,
+    issuer: currentUser,
     issuerDate: document.getElementById('date').value,
     photos: currentPhotos,
     userId: currentUser
@@ -154,235 +117,105 @@ async function saveEntry() {
 
   if (response.ok) {
     alert('Eintrag gespeichert');
+    currentPhotos = []; // Reset photos after save
     loadEntries();
   } else {
-    alert('Fehler beim Speichern');
+    alert('Speichern fehlgeschlagen');
   }
 }
 
 async function loadEntries() {
   const container = document.getElementById('entries-list');
-  container.innerHTML = '<p style="text-align:center;">Lade Übergaben...</p>';
+  container.innerHTML = '<p style="text-align:center;">Lade Übergaben aus der Cloud...</p>';
   document.getElementById('entries-section').style.display = 'block';
 
   try {
-    const response = await fetch('/api/entries?t=' + Date.now());
+    const response = await fetch('/api/entries?nocache=' + Date.now());
     if (response.ok) {
       const entries = await response.json();
-      console.log("Einträge empfangen:", entries);
       window.allEntries = entries;
       container.innerHTML = '';
 
       if (!entries || entries.length === 0) {
-        container.innerHTML = '<p style="text-align:center; color:#888;">Noch keine Übergaben in der Cloud gefunden.</p>';
+        container.innerHTML = '<p style="text-align:center; color:#888;">Keine Einträge in der Datenbank gefunden.</p>';
         return;
       }
 
-      entries.forEach(entry => {
-        // Mapping: Wir suchen in beiden Schreibweisen
-        const d = {
-          date: entry.date || entry.issuer_date || '-',
-          workTime: entry.work_time || entry.workTime || '',
-          machine: entry.machine || 'Prod.-bereich',
-          completedTasks: entry.completed_tasks || entry.completedTasks || '',
-          incidents: entry.incidents || '',
-          incidentFrom: entry.incident_from || entry.incidentFrom || '',
-          incidentTo: entry.incident_to || entry.incidentTo || '',
-          pendingWorks: entry.pending_works || entry.pendingWorks || '',
-          issuer: entry.issuer || 'Unbekannt',
-          issuerTime: entry.issuer_time || entry.issuerTime || '--:--',
-          photos: entry.photos
+      entries.forEach(e => {
+        // Mapping für alle Datenbank-Varianten
+        const machine = e.machine || 'Bereich';
+        const workTime = e.work_time || e.workTime || '---';
+        const completed = e.completed_tasks || e.completedTasks || '-';
+        const pending = e.pending_works || e.pendingWorks || '-';
+        const incidentTxt = e.incidents || '';
+        const from = e.incident_from || e.incidentFrom || '';
+        const to = e.incident_to || e.incidentTo || '';
+        const issuer = e.issuer || 'Unbekannt';
+        const time = e.issuer_time || e.issuerTime || '--:--';
+        const date = e.date || e.issuer_date || '-';
+
+        let photos = [];
+        try { photos = JSON.parse(e.photos || '[]'); } catch(err) {}
+
+        const renderTxt = (t) => {
+          if (!t) return '-';
+          return t.replace(/\[FOTO:(img_\d+)\]/g, (match, id) => {
+            const p = photos.find(item => item.id === id);
+            return p ? `<a href="#" onclick="viewPhoto('${p.id}'); return false;" style="color:#007bff; font-weight:bold;">[📷 BILD ANZEIGEN]</a>` : '[FOTO]';
+          }).replace(/\n/g, '<br>');
         };
 
-      let photos = [];
-      try { photos = JSON.parse(d.photos || '[]'); } catch(e) {}
-
-      const renderText = (text) => {
-        if (!text) return '-';
-        return text.replace(/\[FOTO:(img_\d+)\]/g, (match, id) => {
-          const photo = photos.find(p => p.id === id);
-          if (photo) {
-            return `<a href="#" onclick="viewPhoto('${photo.id}'); return false;" style="color: #007bff; font-weight: bold;">[📷 FOTO ANZEIGEN]</a>`;
-          }
-          return '[FOTO]';
-        }).replace(/\n/g, '<br>');
-      };
-
-      const div = document.createElement('div');
-      div.className = 'entry-item';
-      div.innerHTML = `
-        <div class="entry-header">Datum: ${d.date} | Schicht: ${d.workTime || '---'}</div>
-        <div class="entry-body">
-            <p><strong>Bereich:</strong> ${d.machine}</p>
-            <p><strong>Erledigte Aufgaben:</strong><br>${renderText(d.completedTasks)}</p>
-            ${d.incidents || d.incidentFrom || d.incidentTo ? `
-              <p><strong>Wartung / Störung (${d.incidentFrom || ''} - ${d.incidentTo || ''}):</strong><br>${renderText(d.incidents)}</p>
-            ` : ''}
-            <p><strong>Zu erledigende Aufgaben:</strong><br>${renderText(d.pendingWorks)}</p>
-            <p style="font-size: 0.85rem; color: #666; margin-top: 10px; border-top: 1px solid #eee; padding-top: 5px;">
-                Ausgestellt von <strong>${d.issuer}</strong> um ${d.issuerTime} Uhr
+        const div = document.createElement('div');
+        div.className = 'entry-item';
+        div.innerHTML = `
+          <div class="entry-header">Datum: ${date} | Schicht: ${workTime}</div>
+          <div class="entry-body">
+            <p><strong>Bereich:</strong> ${machine}</p>
+            <p><strong>Erledigt:</strong><br>${renderTxt(completed)}</p>
+            ${incidentTxt || from || to ? `<p><strong>Störung (${from}-${to}):</strong><br>${renderTxt(incidentTxt)}</p>` : ''}
+            <p><strong>Anstehend:</strong><br>${renderTxt(pending)}</p>
+            <p style="font-size:0.8rem; color:#888; border-top:1px solid #eee; margin-top:8px; padding-top:4px;">
+              Von <strong>${issuer}</strong> um ${time} Uhr
             </p>
-        </div>
-      `;
-      container.appendChild(div);
-    });
-
+          </div>
+        `;
+        container.appendChild(div);
+      });
     } else {
-      container.innerHTML = '<p style="text-align:center; color:red;">Fehler beim Laden (Server-Antwort nicht ok).</p>';
+      container.innerHTML = '<p style="color:red; text-align:center;">Cloud-Fehler: ' + response.status + '</p>';
     }
   } catch (err) {
-    console.error("loadEntries Fehler:", err);
-    container.innerHTML = '<p style="text-align:center; color:red;">Netzwerkfehler beim Laden.</p>';
+    container.innerHTML = '<p style="color:red; text-align:center;">Verbindung zur Cloud unterbrochen.</p>';
   }
 }
 
-function viewPhoto(photoId) {
-  let photoData = null;
-  (window.allEntries || []).forEach(entry => {
+function viewPhoto(id) {
+  let data = null;
+  (window.allEntries || []).forEach(e => {
     try {
-      const photos = JSON.parse(entry.photos || '[]');
-      const p = photos.find(item => item.id === photoId);
-      if (p) photoData = p.data;
-    } catch(e) {}
+      const ps = JSON.parse(e.photos || '[]');
+      const p = ps.find(x => x.id === id);
+      if (p) data = p.data;
+    } catch(err) {}
   });
-
-  if (photoData) {
-    const w = window.open("");
-    w.document.write(`<img src="${photoData}" style="max-width:100%; height:auto;">`);
-  } else {
-    alert("Bild konnte nicht geladen werden.");
-  }
+  if (data) {
+    const win = window.open("");
+    win.document.write(`<img src="${data}" style="max-width:100%;">`);
+  } else alert("Bild nicht gefunden.");
 }
 
-// Spracheingabe (Microphone)
-function startSpeech(targetId) {
-  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+function startSpeech(id) {
+  const Reco = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Reco) return alert("Spracherkennung wird nicht unterstützt.");
+  const recognition = new Reco();
   recognition.lang = 'de-DE';
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-
   const btn = event.currentTarget;
-  btn.style.backgroundColor = '#ffcccc'; // Zeigt an, dass aufgenommen wird
-
+  btn.style.backgroundColor = '#ffcccc';
   recognition.start();
-
-  recognition.onresult = (event) => {
-    const speechResult = event.results[0][0].transcript;
-    const textarea = document.getElementById(targetId);
-    textarea.value += (textarea.value ? ' ' : '') + speechResult;
+  recognition.onresult = (e) => {
+    document.getElementById(id).value += (document.getElementById(id).value ? ' ' : '') + e.results[0][0].transcript;
     btn.style.backgroundColor = '';
   };
-
-  recognition.onspeechend = () => {
-    recognition.stop();
-    btn.style.backgroundColor = '';
-  };
-
-  recognition.onerror = (event) => {
-    console.error('Spracherkennung Fehler:', event.error);
-    btn.style.backgroundColor = '';
-    alert('Spracherkennung fehlgeschlagen oder nicht erlaubt.');
-  };
-}
-
-// PDF: Heutige Übergabe
-function createDailyPDF() {
-  const content = document.createElement('div');
-  content.style.padding = '30px';
-  content.style.fontFamily = 'Arial, sans-serif';
-  content.style.backgroundColor = 'white'; // Hintergrund erzwingen
-  content.style.color = 'black'; // Textfarbe erzwingen
-
-  const machine = document.getElementById('machine').value || "Prod.-bereich";
-  const date = document.getElementById('date').value;
-  const workTime = document.getElementById('workTime').value;
-  const completed = document.getElementById('completedTasks').value;
-  const incidentFrom = document.getElementById('incident-from').value;
-  const incidentTo = document.getElementById('incident-to').value;
-  const incidents = document.getElementById('incidents').value;
-  const pending = document.getElementById('pendingWorks').value;
-  const issuer = document.getElementById('issuer').value;
-
-  content.innerHTML = `
-    <h1 style="color: #007bff; border-bottom: 2px solid #007bff; pb: 10px;">Schichtübergabe</h1>
-    <p><strong>Datum:</strong> ${date} | <strong>Arbeitszeit:</strong> ${workTime || '-'}</p>
-    <p><strong>Prod.-bereich:</strong> ${machine}</p>
-    <hr>
-    <h3>Erledigte Aufgaben:</h3>
-    <p>${completed ? completed.replace(/\n/g, '<br>') : '-'}</p>
-
-    ${incidents || incidentFrom || incidentTo ? `
-      <h3>Wartung / Störung (${incidentFrom} - ${incidentTo}):</h3>
-      <p>${incidents ? incidents.replace(/\n/g, '<br>') : '-'}</p>
-    ` : ''}
-
-    <h3>Zu erledigende Arbeiten:</h3>
-    <p>${pending ? pending.replace(/\n/g, '<br>') : '-'}</p>
-
-    <div style="margin-top: 50px; border-top: 1px solid #ccc; pt: 10px;">
-      <p><strong>Ausgestellt durch:</strong> ${issuer}</p>
-      <p><strong>Erstellt am:</strong> ${new Date().toLocaleString('de-DE')}</p>
-    </div>
-  `;
-
-  html2pdf().from(content).set({
-    margin: 10,
-    filename: `uebergabe_${date}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  }).save();
-}
-
-// PDF: Gesamte Woche
-function createWeeklyPDF() {
-  const today = new Date();
-  const dayOfWeek = today.getDay();
-  const daysBack = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  const monday = new Date(today);
-  monday.setHours(0,0,0,0);
-  monday.setDate(today.getDate() - daysBack);
-
-  const friday = new Date(monday);
-  friday.setDate(monday.getDate() + 4);
-  friday.setHours(23,59,59,999);
-
-  const weekEntries = (window.allEntries || []).filter(e => {
-    const d = new Date(e.date);
-    return d >= monday && d <= friday;
-  });
-
-  const content = document.createElement('div');
-  content.style.padding = '20px';
-  content.style.backgroundColor = 'white'; // Hintergrund erzwingen
-  content.style.color = 'black'; // Textfarbe erzwingen
-  content.innerHTML = `
-    <h1>Schichtübergabe – Woche ${monday.toLocaleDateString('de-DE')}</h1>
-    <p><strong>Zeitraum:</strong> ${monday.toLocaleDateString('de-DE')} – ${friday.toLocaleDateString('de-DE')}</p>
-    <hr>
-    ${weekEntries.length === 0 ? '<p>Keine Einträge für diese Woche gefunden.</p>' : weekEntries.map(e => `
-      <div style="margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
-        <h3>Datum: ${e.date} | Arbeitszeit: ${e.workTime || '-'}</h3>
-        <p><strong>Prod.-bereich:</strong> ${e.machine || 'Prod.-bereich'}</p>
-        <p><strong>Erledigte Aufgaben:</strong><br>${e.completedTasks ? e.completedTasks.replace(/\n/g, '<br>') : '-'}</p>
-        ${e.incidents || e.incidentFrom || e.incidentTo ? `
-          <p><strong>Wartung / Störung (${e.incidentFrom || ''} - ${e.incidentTo || ''}):</strong><br>${e.incidents ? e.incidents.replace(/\n/g, '<br>') : '-'}</p>
-        ` : ''}
-        <p><strong>Anstehende Arbeiten:</strong><br>${e.pendingWorks ? e.pendingWorks.replace(/\n/g, '<br>') : '-'}</p>
-        <p style="font-size: 0.8rem; color: #666;">Ausgestellt von ${e.issuer} um ${e.issuerTime}</p>
-      </div>
-    `).join('')}
-
-  `;
-
-  content.style.position = 'absolute';
-  content.style.left = '-9999px';
-  document.body.appendChild(content);
-
-  html2pdf().from(content).set({
-    margin: 10,
-    filename: `uebergabe_woche_${monday.toISOString().slice(0, 10)}.pdf`,
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  }).save();
-  document.body.removeChild(content);
+  recognition.onerror = () => { btn.style.backgroundColor = ''; alert("Fehler beim Zuhören."); };
+  recognition.onspeechend = () => { recognition.stop(); btn.style.backgroundColor = ''; };
 }
