@@ -61,6 +61,9 @@ const initDb = async () => {
 
   try {
     if (isPostgres) {
+      // Einmaliges Löschen der Benutzer-Tabelle zum Zurücksetzen
+      // await pool.query("DROP TABLE IF EXISTS users CASCADE");
+
       await pool.query(usersTable);
       await pool.query(entriesTable);
       console.log("Tabellen in Postgres geprüft/erstellt");
