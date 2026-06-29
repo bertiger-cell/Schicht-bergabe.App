@@ -44,7 +44,7 @@ module.exports = {
     const now = new Date();
     const currentTime = now.toTimeString().slice(0, 5);
 
-    // Wir ordnen die Daten den exakten Spaltennamen in Supabase zu
+    // EXAKTE ANPASSUNG AN DEINE SQL-TABELLE (UNTERSTRICHE)
     const { error } = await supabase
       .from('entries')
       .insert([{
@@ -52,22 +52,22 @@ module.exports = {
         operator: entry.operator,
         additional_employee: entry.additionalEmployee || '',
         date: entry.date,
-        work_time: entry.workTime,
-        incident_from: entry.incidentFrom,
-        incident_to: entry.incidentTo,
-        completed_tasks: entry.completedTasks,
-        incidents: entry.incidents,
-        pending_works: entry.pendingWorks,
-        issuer: entry.issuer,
-        issuer_date: entry.issuerDate,
+        work_time: entry.workTime || '',
+        incident_from: entry.incidentFrom || '',
+        incident_to: entry.incidentTo || '',
+        completed_tasks: entry.completedTasks || '',
+        incidents: entry.incidents || '',
+        pending_works: entry.pendingWorks || '',
+        issuer: entry.issuer || '',
+        issuer_date: entry.issuerDate || '',
         issuer_time: currentTime,
         photos: JSON.stringify(entry.photos || []),
-        user_id: entry.userId
+        user_id: entry.userId || ''
       }]);
 
     if (error) {
-      console.error("Supabase Save Error:", error.message);
-      throw error; // WICHTIG: Fehler an den Server weitergeben!
+      console.error("Supabase Speichern Fehler Details:", error);
+      throw error;
     }
   }
 };
